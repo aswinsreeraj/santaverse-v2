@@ -40,6 +40,3 @@ A car-marketplace style application themed for the North Pole.
     go run cmd/server/main.go
     ```
 4.  Open your browser to [http://localhost:8080](http://localhost:8080).
-
-## Screenshots
-*(Insert screenshots of Marketplace and Garage here)*
