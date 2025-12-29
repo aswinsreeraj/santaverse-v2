@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Garage - Santaverse</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header>
+        <a href="/" class="header-brand" style="text-decoration: none; color: inherit;">
+            <img src="/img/logo_nitro_reindeer.png" alt="Santaverse Logo">
+            <h1>Santaverse Garage</h1>
+        </a>
+        <nav>
+            <a href="/">Marketplace</a>
+            <a href="/garage" class="active">My Garage</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="category-filter">
+            <h2>Your Fleet</h2>
+            <p>Customize and maintain Santa's rides.</p>
+        </div>
+
+        <div id="garage-grid" class="grid">
+            <p>Loading Garage...</p>
+        </div>
+    </main>
+
+    <!-- Mod Selection Modal -->
+    <div id="mod-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Select Upgrade</h2>
+                <button class="modal-close" onclick="closeModModal()">&times;</button>
+            </div>
+            <div id="mod-list-container" class="mod-list">
+                <!-- Mods injected here -->
+                <p>Loading components...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        let currentVehicleId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadGarage();
+        });
+
+        async function loadGarage() {
+            const grid = document.getElementById('garage-grid');
+            try {
+                const vehicles = await fetchGarage();
+
+                if (vehicles.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Your garage is empty. <a href="/" style="color: var(--accent-gold);">Go to Marketplace</a></p>';
+                    return;
+                }
+
+                grid.innerHTML = vehicles.map(v => {
+                    // Logic to swap image if mods are applied
+                    let displayImage = v.item_image_url;
+                    if (v.has_mods) {
+                        // Assuming the naming convention is filename_turbo.png
+                        const parts = v.item_image_url.split('.');
+                        const ext = parts.pop();
+                        const base = parts.join('.');
+                        displayImage = `${base}_turbo.${ext}`;
+                    }
+
+                    return `
+                    <div class="card">
+                        <img src="${displayImage}" alt="${v.item_name}" style="height: 180px;">
+                        <div class="card-content">
+                            <span class="card-category">${v.item_category} ${v.item_type}</span>
+                            <h3 class="card-title">${v.item_name}</h3>
+                            <p style="font-size: 0.9rem; color: #666">ID: ${v.id}</p>
+                            ${formatStats(v.current_stats)}
+                            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 1rem 0;">
+                            
+                            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button onclick="openModModal(${v.id})" class="btn btn-secondary" style="flex: 2;">Customize & Mod</button>
+                                ${v.has_mods ? `<button onclick="handleReset(${v.id})" class="btn" style="flex: 1; background: #eab308; color: black; box-shadow:none;">Reset</button>` : ''}
+                                <button onclick="handleSell(${v.id})" class="btn btn-danger" style="flex: 1; padding: 0.5rem;">Sell</button>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (err) {
+                grid.innerHTML = `<p style="color:red">Error loading garage: ${err.message}</p>`;
+            }
+        }
+
+        async function handleSell(vehicleId) {
+            if (confirm("Are you sure you want to return this vehicle to Santa? This cannot be undone.")) {
+                try {
+                    const res = await fetch('/api/garage/sell', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ vehicle_id: vehicleId })
+                    });
+                    if (!res.ok) throw new Error("Failed to sell");
+                    alert("Vehicle returned.");
+                    loadGarage();
+                } catch (err) {
+                    alert(err.message);
+                }
+            }
+        }
+
+        async function handleReset(vehicleId) {
+            if (confirm("Remove all mods and restore factory settings?")) {
+                try {
+                    const res = await fetch('/api/garage/reset', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ vehicle_id: vehicleId })
+                    });
+                    if (!res.ok) throw new Error("Failed to reset");
+                    alert("Vehicle reset to stock.");
+                    loadGarage();
+                } catch (err) {
+                    alert(err.message);
+                }
+            }
+        }
+
+        async function openModModal(vehicleId) {
+            currentVehicleId = vehicleId;
+            const modal = document.getElementById('mod-modal');
+            const list = document.getElementById('mod-list-container');
+
+            modal.style.display = 'flex';
+            list.innerHTML = '<p>Fetching parts...</p>';
+
+            try {
+                const mods = await fetchMods();
+                list.innerHTML = mods.map(mod => {
+                    const stats = mod.stat_boosts; // Already an object because of json.RawMessage
+                    const statStr = Object.entries(stats).map(([k, v]) => {
+                        // Simple capitalization
+                        const key = k.charAt(0).toUpperCase() + k.slice(1);
+                        return `${key}: +${v}`;
+                    }).join(', ');
+
+                    return `
+                    <div class="mod-item" onclick="handleApplyMod(${mod.id})">
+                        <div class="mod-info">
+                            <h4>${mod.name}</h4>
+                            <span class="mod-stats">${statStr}</span>
+                        </div>
+                        <span class="mod-price">🪙 ${mod.price}</span>
+                    </div>
+                `}).join('');
+            } catch (err) {
+                list.innerHTML = `<p style="color:red">Failed to load mods.</p>`;
+            }
+        }
+
+        function closeModModal() {
+            document.getElementById('mod-modal').style.display = 'none';
+            currentVehicleId = null;
+        }
+
+        async function handleApplyMod(modId) {
+            if (!currentVehicleId) return;
+
+            if (confirm(`Install this mod for 🪙?`)) { // Ideally show price in confirm
+                try {
+                    const result = await applyMod(currentVehicleId, modId);
+                    alert("Mod Installed! System Upgraded.");
+                    closeModModal();
+                    loadGarage(); // Refresh UI to show new stats and new image
+                } catch (err) {
+                    alert(`Installation Failed: ${err.message}`);
+                }
+            }
+        }
+
+        // Close modal if clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('mod-modal');
+            if (event.target == modal) {
+                closeModModal();
+            }
+        }
+    </script>
+</body>
+
+</html>
