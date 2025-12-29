@@ -4,46 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Santaverse Marketplace</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>Santaverse Garage - Marketplace</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=Mountains+of+Christmas:wght@700&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
     <div class="snowflake">❅</div>
-    <div class="snowflake">❆</div>
-    <div class="snowflake">❅</div>
-    <div class="snowflake">❆</div>
     <div class="snowflake">❅</div>
 
     <header>
-        <a href="/" class="header-brand" style="text-decoration: none; color: inherit;">
-            <img src="/img/logo_nitro_reindeer.png" alt="Santaverse Logo">
+        <a href="index.html" class="header-brand" style="text-decoration: none; color: inherit;">
+            <img src="img/logo_nitro_reindeer.png" alt="Santaverse Logo">
             <h1>Santaverse Garage</h1>
         </a>
         <nav>
-            <a href="/" class="active">Marketplace</a>
-            <a href="/garage">My Garage</a>
+            <a href="index.html" class="active">Marketplace</a>
+            <a href="garage.html">My Garage</a>
         </nav>
     </header>
 
     <main>
-        <div class="category-filter">
-            <h2>Reindeers & Sleighs Marketplace</h2>
-            <p>Find the perfect ride for Christmas Eve!</p>
+        <div class="hero">
+            <h2>Upgrade Santa's Ride</h2>
+            <p>High-performance Reindeers & Next-gen Sleighs.</p>
         </div>
 
         <div id="marketplace-grid" class="grid">
-            <!-- Items injected here -->
-            <p>Loading North Pole Inventory...</p>
+            <p>Loading items...</p>
         </div>
     </main>
 
-    <script src="/js/app.js"></script>
+    <script src="js/mock-data.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const grid = document.getElementById('marketplace-grid');
             try {
-                const items = await fetchMarketplaceItems();
+                const items = await fetchItems();
                 grid.innerHTML = items.map(item => `
                     <div class="card">
                         <img src="${item.image_url}" alt="${item.name}">
@@ -51,15 +54,16 @@
                             <span class="card-category">${item.category} ${item.type}</span>
                             <h3 class="card-title">${item.name}</h3>
                             ${formatStats(item.stats)}
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                                <span class="price-tag">🪙 ${item.price}</span>
-                                <a href="/product?id=${item.id}" class="btn">View Details</a>
+                            <div class="card-price">
+                                <span>🪙 ${item.price}</span>
+                                <a href="product.html?id=${item.id}" class="btn">View Details</a>
                             </div>
                         </div>
                     </div>
                 `).join('');
             } catch (err) {
-                grid.innerHTML = `<p style="color:red">Error loading marketplace: ${err.message}</p>`;
+                grid.innerHTML = '<p>Failed to load items.</p>';
+                console.error(err);
             }
         });
     </script>

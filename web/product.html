@@ -5,82 +5,128 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details - Santaverse</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .detail-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+            padding: 2rem 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .detail-container {
+                grid-template-columns: 1fr;
+                /* Stack on mobile */
+            }
+        }
+
+        .detail-image {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: contain;
+            /* Ensure image isn't cropped */
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+        }
+
+        .detail-info h2 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--accent-gold), #fff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .price-tag {
+            font-size: 2rem;
+            color: var(--accent-gold);
+            font-weight: bold;
+            margin: 1rem 0;
+            display: block;
+        }
+    </style>
 </head>
 
 <body>
     <header>
-        <a href="/" class="header-brand" style="text-decoration: none; color: inherit;">
-            <img src="/img/logo_nitro_reindeer.png" alt="Santaverse Logo">
+        <a href="index.html" class="header-brand" style="text-decoration: none; color: inherit;">
+            <img src="img/logo_nitro_reindeer.png" alt="Santaverse Logo">
             <h1>Santaverse Garage</h1>
         </a>
         <nav>
-            <a href="/">Marketplace</a>
-            <a href="/garage">My Garage</a>
+            <a href="index.html">Marketplace</a>
+            <a href="garage.html">My Garage</a>
         </nav>
     </header>
 
-    <main>
-        <div id="product-container" class="detail-container">
-            <p>Loading details...</p>
-        </div>
+    <main id="product-main">
+        <p>Loading details...</p>
     </main>
 
-    <script src="/js/app.js"></script>
+    <script src="js/mock-data.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            const container = document.getElementById('product-container');
+            const id = parseInt(params.get('id'));
 
             if (!id) {
-                container.innerHTML = '<p>Item not selected.</p>';
+                window.location.href = 'index.html';
                 return;
             }
 
             try {
-                const item = await fetchItemDetails(id);
-                container.innerHTML = `
-                    <div class="detail-img-container">
-                        <img src="${item.image_url}" alt="${item.name}" class="detail-img">
-                    </div>
-                    <div class="detail-content">
-                        <span class="card-category">${item.category} ${item.type}</span>
-                        <h2>${item.name}</h2>
-                        <span class="price-tag">🪙 ${item.price}</span>
-                        
-                        <div class="detail-description">
-                            "Experience the magic of the North Pole with the ${item.name}. 
-                            Engineered for ${item.category.toLowerCase()} performance and reliable gift delivery."
-                        </div>
+                // Fetch all items from API (or mock) and find the one we need
+                // Ideally this would be api.getItem(id)
+                const item = await api.getItem(id);
 
-                        <div class="features-box">
+                if (!item) {
+                    document.getElementById('product-main').innerHTML = '<p>Item not found.</p>';
+                    return;
+                }
+
+                // Determine "Best Suited For" based on stats
+                let bestFor = "General Use";
+                if (item.stats.magic > 50) bestFor = "Magical Deliveries";
+                else if (item.stats.speed > 20) bestFor = "Express Shipping";
+                else if (item.stats.capacity > 100) bestFor = "Heavy Cargo";
+
+                document.getElementById('product-main').innerHTML = `
+                    <div class="detail-container">
+                        <img src="${item.image_url}" alt="${item.name}" class="detail-image">
+                        <div class="detail-info">
+                            <span style="background: var(--accent-ice); color: var(--text-dark); padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; display: inline-block; margin-bottom: 1rem;">${item.category} ${item.type}</span>
+                            <h2>${item.name}</h2>
+                            <span class="price-tag">🪙 ${item.price}</span>
+                            
+                            <p style="margin-bottom: 2rem; line-height: 1.6; color: #ddd;">
+                                Experience the future of North Pole logistics with the <strong>${item.name}</strong>. 
+                                Designed for <strong>${bestFor}</strong>, this unit ensures your presents arrive on time, every time.
+                            </p>
+
                             <h3>Performance Specs</h3>
                             ${formatStats(item.stats)}
-                            <p style="margin-top: 1rem; font-size: 0.9rem;"><strong>Best Suited For:</strong> ${getBestSuitedFor(item)}</p>
-                        </div>
 
-                        <button onclick="handleBuy(${item.id})" class="btn btn-danger" style="width: 100%; font-size: 1.1rem; padding: 1rem;">
-                            Purchase for Santa's Fleet
-                        </button>
+                            <button onclick="handleBuy(${item.id})" class="btn" style="margin-top: 2rem; width: 100%; font-size: 1.2rem;">Add to Garage</button>
+                        </div>
                     </div>
                 `;
             } catch (err) {
-                container.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+                document.getElementById('product-main').innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
             }
         });
 
-        function getBestSuitedFor(item) {
-            if (item.type === 'reindeer') {
-                if (item.category === 'Performance') return 'High-speed roof hopping';
-                if (item.category === 'Luxury') return 'VIP gift delivery';
-                return 'Short-range town runs';
-            } else {
-                if (item.category === 'Luxury') return 'Trans-continental comfort';
-                if (item.category === 'Performance') return 'Time-critical missions';
-                return 'Heavy cargo hauling';
-            }
-        }
 
         async function handleBuy(id) {
             if (confirm('Buy this item for your garage?')) {

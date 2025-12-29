@@ -404,3 +404,11 @@ main {
         /* Full width on tiny screens */
     }
 }
+
+/* Fix for dropdown visibility */
+select option {
+    background-color: #0f2027;
+    /* Dark Theme Bg */
+    color: #e2e8f0;
+    /* Light Text */
+}

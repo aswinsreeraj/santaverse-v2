@@ -1,47 +1,25 @@
-const API_BASE = '/api';
+// Shared logic for Santaverse Garage
 
-async function fetchMarketplaceItems() {
-    const res = await fetch(`${API_BASE}/marketplace`);
-    if (!res.ok) throw new Error('Failed to fetch items');
-    return res.json();
-}
+// Note: 'api' is global from api-client.js
 
-async function fetchItemDetails(id) {
-    const res = await fetch(`${API_BASE}/marketplace/${id}`);
-    if (!res.ok) throw new Error('Failed to fetch item');
-    return res.json();
+async function fetchItems() {
+    return api.getItems();
 }
 
 async function fetchGarage() {
-    const res = await fetch(`${API_BASE}/garage`);
-    if (!res.ok) throw new Error('Failed to fetch garage');
-    return res.json();
-}
-
-async function buyItem(itemId) {
-    const res = await fetch(`${API_BASE}/buy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item_id: parseInt(itemId) })
-    });
-    if (!res.ok) throw new Error('Failed to buy item');
-    return res.json();
+    return api.getGarage();
 }
 
 async function fetchMods() {
-    const res = await fetch(`${API_BASE}/mods`);
-    if (!res.ok) throw new Error('Failed to fetch mods');
-    return res.json();
+    return api.getMods();
+}
+
+async function buyItem(itemId) {
+    return api.buyItem(itemId);
 }
 
 async function applyMod(vehicleId, modId) {
-    const res = await fetch(`${API_BASE}/garage/mod`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicle_id: parseInt(vehicleId), mod_id: parseInt(modId) })
-    });
-    if (!res.ok) throw new Error('Failed to apply mod');
-    return res.json();
+    return api.applyMod(vehicleId, modId);
 }
 
 // Helper to format stats
@@ -49,9 +27,12 @@ function formatStats(stats) {
     if (!stats) return '';
     // Handle if stats is JSON string or object
     const s = typeof stats === 'string' ? JSON.parse(stats) : stats;
-    let html = '<ul class="stats-list">';
+    let html = '<ul class="stats-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; list-style: none; padding: 0;">';
     for (const [key, val] of Object.entries(s)) {
-        html += `<li><span style="text-transform: capitalize">${key}</span> <strong>${val}</strong></li>`;
+        html += `<li style="background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 5px; font-size: 0.9rem;">
+            <span style="text-transform: capitalize; color: var(--text-dim);">${key}:</span> 
+            <strong style="color: var(--accent-light);">${val}</strong>
+        </li>`;
     }
     html += '</ul>';
     return html;

@@ -28,7 +28,7 @@ func GetGarage(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var vehicles []models.OwnedVehicle
+	vehicles := []models.OwnedVehicle{} // Initialize as empty slice to return [] instead of null
 	for rows.Next() {
 		var v models.OwnedVehicle
 		var currentStatsRaw []byte // Temporary variable for scanning current_stats
