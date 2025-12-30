@@ -42,10 +42,19 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{"title": "Santaverse Garage"})
 	})
+	r.GET("/index.html", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{"title": "Santaverse Garage"})
+	})
 	r.GET("/product", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "product.html", gin.H{"title": "Product Details"})
 	})
+	r.GET("/product.html", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "product.html", gin.H{"title": "Product Details"})
+	})
 	r.GET("/garage", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "garage.html", gin.H{"title": "My Garage"})
+	})
+	r.GET("/garage.html", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "garage.html", gin.H{"title": "My Garage"})
 	})
 
